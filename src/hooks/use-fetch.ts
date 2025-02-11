@@ -4,7 +4,7 @@ import { BASE_API } from '../utils/constant.ts';
 interface FetchState<T> {
   data: T | null;
   loading: boolean;
-  error: Error | null;
+  error: Error | null | string;
 }
 
 interface FetchOptions {
