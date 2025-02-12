@@ -83,7 +83,7 @@ export const Card: React.FC<CardProps> = ({data, refetch}) => {
                 icon={<BiX/>}
                 color="red"
               />
-              <ActionButton type="submit" disabled={loading} icon={<BiCheck/>} color="emerald"/>
+              <ActionButton type="submit" disabled={title === data.title} icon={<BiCheck/>} color="emerald"/>
             </div>
           </form>
         ) : (
@@ -110,8 +110,9 @@ const ActionButton = ({icon, color, ...props}: {
     type={props.type}
     onClick={props.onClick}
     disabled={props.disabled}
-    className={`cursor-pointer p-2 rounded-full hover:bg-${color}-100 disabled:opacity-50`}
+    className={`cursor-pointer p-2 rounded-full disabled:bg-gray-50 disabled:cursor-auto ${color === 'red' ? 'hover:bg-red-100' : color === 'blue' ? 'hover:bg-blue-100' : 'hover:bg-emerald-100'} disabled:opacity-50`}
   >
-    <span className={`text-${color}-500`}>{icon}</span>
+    <span
+      className={`${color === 'red' ? 'text-red-500' : color === 'blue' ? 'text-blue-500' : 'text-emerald-500'}`}>{icon}</span>
   </button>
 );

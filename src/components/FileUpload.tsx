@@ -95,7 +95,7 @@ export function FileUpload({name, onUpload, multiple = false, accept = 'image/*'
           type="button"
           onClick={handleUpload}
           disabled={images.length === 0 || isUploading}
-          className="flex items-center cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 bg-emerald-500 hover:bg-emerald-500/90 transition text-white px-3 py-2 rounded text-sm"
+          className="flex items-center cursor-pointer disabled:cursor-auto disabled:bg-gray-400 bg-emerald-500 hover:bg-emerald-500/90 transition text-white px-3 py-2 rounded text-sm"
         >
           <BiUpload className="w-5 h-5 mr-1"/>
           {isUploading ? 'Uploading...' : 'Upload'}
@@ -103,7 +103,8 @@ export function FileUpload({name, onUpload, multiple = false, accept = 'image/*'
         <button
           type="button"
           onClick={() => setImages([])}
-          className="flex items-center cursor-pointer bg-zinc-100 hover:bg-zinc-200/90 transition text-gray-600 px-3 py-2 rounded text-sm"
+          disabled={images.length === 0 || isUploading}
+          className="flex items-center cursor-pointer disabled:cursor-auto disabled:bg-zinc-300 bg-zinc-100 hover:bg-zinc-200/90 transition text-gray-600 px-3 py-2 rounded text-sm"
         >
           <BiX className="w-5 h-5 mr-1"/>
           Cancel
