@@ -1,71 +1,90 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { BASE_API } from '../utils/constant.ts';
+import { ZodSchema } from 'zod';
+
+type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+interface FetchOptions<T> {
+  method?: HttpMethod;
+  headers?: HeadersInit;
+  body?: T;
+  schema?: ZodSchema<T>;
+}
 
 interface FetchState<T> {
   data: T | null;
   loading: boolean;
-  error: Error | null | string;
+  error: Error | null;
+  validationErrors: Record<string, string> | null;
 }
 
-interface FetchOptions {
-  headers?: HeadersInit;
-  skipAuth?: boolean;
-}
-
-export function useFetch<T>() {
-  const [state, setState] = useState<FetchState<T>>({
-    data: null,
-    loading: false,
-    error: null
-  });
+export const useFetch = <T, U = void>(
+  url: string,
+  options?: FetchOptions<U>
+): FetchState<T> & { fetchData: (body?: U) => Promise<boolean>, resetValidationError: () => void } => {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string> | null>(null);
   
-  const executeRequest = useCallback(async (
-    url: string,
-    method: string,
-    options?: FetchOptions,
-    body?: unknown
-  ) => {
-    setState(prev => ({...prev, loading: true, error: null}));
-    
-    try {
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-        ...(options?.headers || {})
-      };
+  const resetValidationError = useCallback(() => setValidationErrors(null), []);
+  
+  const fetchData = useCallback(
+    async (body?: U): Promise<boolean> => {
+      setLoading(true);
+      setError(null);
+      setValidationErrors(null);
       
-      const response = await fetch(`${BASE_API}${url}`, {
-        method,
-        headers,
-        body: body ? JSON.stringify(body) : undefined
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      try {
+        if (body && options?.schema) {
+          const parseResult = options.schema.safeParse(body);
+          if (!parseResult.success) {
+            const formattedErrors: Record<string, string> = {};
+            parseResult.error.errors.forEach(err => {
+              formattedErrors[err.path[0]] = err.message;
+            });
+            setValidationErrors(formattedErrors);
+            setLoading(false);
+            return false;
+          }
+        }
+        
+        const isFormData = body instanceof FormData;
+        
+        const response = await fetch(`${BASE_API}${url}`, {
+          method: options?.method || 'GET',
+          headers: isFormData ? {} : options?.headers || {'Content-Type': 'application/json'},
+          body: body
+            ? isFormData
+              ? body // Directly pass FormData
+              : JSON.stringify(body)
+            : options?.body
+              ? JSON.stringify(options.body)
+              : null
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        setData(result);
+        return true;
+      } catch (err) {
+        setError(err as Error);
+        return false;
+      } finally {
+        setLoading(false);
       }
-      
-      const result = await response.json();
-      setState({data: result, loading: false, error: null});
-      return result;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : new Error('An unknown error occurred');
-      setState(prev => ({...prev, loading: false, error: errorMessage}));
-      throw errorMessage;
+    },
+    [url, options]
+  );
+  
+  useEffect(() => {
+    if (options?.method === 'GET') {
+      fetchData();
     }
   }, []);
   
-  const api = {
-    get: useCallback((url: string, options?: FetchOptions) =>
-      executeRequest(url, 'GET', options), [executeRequest]),
-    
-    put: useCallback((url: string, body: unknown, options?: FetchOptions) =>
-      executeRequest(url, 'PUT', options, body), [executeRequest]),
-    
-    post: useCallback((url: string, body: unknown, options?: FetchOptions) =>
-      executeRequest(url, 'POST', options, body), [executeRequest]),
-    
-    delete: useCallback((url: string, options?: FetchOptions) =>
-      executeRequest(url, 'DELETE', options), [executeRequest])
-  };
-  
-  return {...state, api};
-}
+  return {data, loading, error, fetchData, validationErrors, resetValidationError};
+};

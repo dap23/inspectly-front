@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { BiPlus, BiUpload, BiX } from 'react-icons/bi';
 import * as React from 'react';
 import toast from 'react-hot-toast';
+import { useFetch } from '../hooks/use-fetch.ts';
 
 interface FileUploadProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
@@ -14,6 +15,9 @@ interface ImageFile {
 }
 
 export function FileUpload({name, onUpload, multiple = false, accept = 'image/*', ...props}: FileUploadProps) {
+  const {fetchData} = useFetch<any, FormData>('/upload', {
+    method: 'POST'
+  });
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [overallProgress, setOverallProgress] = useState(0);
@@ -25,23 +29,51 @@ export function FileUpload({name, onUpload, multiple = false, accept = 'image/*'
     if (onUpload) onUpload(files);
   };
   
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (images.length === 0) return;
     setIsUploading(true);
-    toast.loading('Uploading images...');
+    const loadingToast = toast.loading('Uploading images...');
     
     let progress = 0;
-    const interval = setInterval(() => {
-      progress += 20;
-      setOverallProgress(progress);
-      if (progress >= 100) {
-        clearInterval(interval);
-        setIsUploading(false);
-        toast.dismiss();
-        toast.success('Upload successfully');
-        setImages((prev) => prev.map((img) => ({...img, status: 'Uploaded'})));
-      }
-    }, 500);
+    let interval: number | null = null;
+    
+    try {
+      const updatedImages = images.map(img => ({...img, status: 'Uploading'})) as ImageFile[];
+      setImages(updatedImages);
+      
+      const formData = new FormData();
+      
+      images.forEach(image => {
+        formData.append('images', image.file);
+      });
+      
+      interval = window.setInterval(() => {
+        progress += 10;
+        setOverallProgress(progress);
+        if (progress >= 90 && interval) clearInterval(interval);
+      }, 100);
+      
+      await fetchData(formData);
+      clearInterval(interval);
+      
+      setOverallProgress(100);
+      setTimeout(() => {
+        setImages(prev => prev.map(img => ({...img, status: 'Uploaded'})));
+        setOverallProgress(0);
+      }, 500);
+      
+      toast.dismiss(loadingToast);
+      toast.success('All images uploaded successfully!');
+    } catch (err) {
+      if (interval) clearInterval(interval);
+      toast.dismiss(loadingToast);
+      toast.error((err as Error).message || 'Failed to upload images');
+      setImages(prev =>
+        prev.map(img => ({...img, status: 'Pending'}))
+      );
+    } finally {
+      setIsUploading(false);
+    }
   };
   
   const removeImage = (index: number) => {
@@ -98,7 +130,7 @@ export function FileUpload({name, onUpload, multiple = false, accept = 'image/*'
         <DragDropArea onFilesAdded={handleFilesAdded}/>
       )}
       
-      {isUploading && (
+      {images.length > 0 && (
         <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-4 mb-3">
           <div
             className="h-full bg-blue-500 transition-all"

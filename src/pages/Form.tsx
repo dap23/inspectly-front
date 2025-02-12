@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router';
 import { FileUpload } from '../components/FileUpload.tsx';
 
-export function Form() {
+export default function Form() {
   const handleUpload = (files: File[]) => {
     console.log(files);
   };

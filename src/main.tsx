@@ -1,20 +1,21 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router'
-import './index.css'
-import List from "./pages/List.tsx";
-import DefaultLayout from "./layouts/DefaultLayout.tsx";
-import { Form } from "./pages/Form.tsx";
+import { lazy, StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Routes, Route } from 'react-router';
+import './index.css';
+
+const List = lazy(() => import('./pages/List.tsx'));
+const Form = lazy(() => import('./pages/Form.tsx'));
+const DefaultLayout = lazy(() => import('./layouts/DefaultLayout.tsx'));
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route element={<DefaultLayout />}>
-          <Route index element={<List />} />
-          <Route path=":id" element={<Form />} />
+        <Route element={<DefaultLayout/>}>
+          <Route index element={<List/>}/>
+          <Route path=":id" element={<Form/>}/>
         </Route>
       </Routes>
     </BrowserRouter>
-  </StrictMode>,
-)
+  </StrictMode>
+);
