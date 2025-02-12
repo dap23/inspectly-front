@@ -10,7 +10,7 @@ import { UpdateTitleDto, UpdateTitleSchema } from '../dtos';
 
 interface CardProps {
   data: ImageType;
-  refetch?: () => Promise<void>;
+  refetch?: () => Promise<boolean>;
 }
 
 export const Card: React.FC<CardProps> = ({data, refetch}) => {
