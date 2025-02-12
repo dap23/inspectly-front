@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { MdEdit, MdDelete } from 'react-icons/md';
-import { BiX, BiCheck } from 'react-icons/bi';
+import { BiX, BiCheck, BiCalendar } from 'react-icons/bi';
 import { ImageType } from '../types';
 import { BASE_ASSET_URL } from '../utils/constant.ts';
 import { useFetch } from '../hooks/use-fetch.ts';
@@ -71,9 +71,6 @@ export const Card: React.FC<CardProps> = ({data, refetch}) => {
                 onChange={(e) => setTitle(e.target.value)}
                 disabled={loading}
               />
-              {validationErrors?.title && (
-                <small className="text-rose-500">{validationErrors.title}</small>
-              )}
             </div>
             <div>
               <ActionButton
@@ -89,7 +86,6 @@ export const Card: React.FC<CardProps> = ({data, refetch}) => {
         ) : (
           <h2 className="text-lg font-semibold">{data.title || 'Untitled'}</h2>
         )}
-        
         <div className="flex items-center gap-2">
           {!editMode && (
             <>
@@ -98,6 +94,17 @@ export const Card: React.FC<CardProps> = ({data, refetch}) => {
             </>
           )}
         </div>
+      </div>
+      
+      {validationErrors?.title && (
+        <small className="text-rose-500">{validationErrors.title}</small>
+      )}
+      
+      <div className="flex items-center mt-2">
+        <BiCalendar className="text-gray-400 w-3 h-3 mr-1"/>
+        <span className="text-xs text-gray-400">
+          {new Intl.DateTimeFormat('id-ID', {dateStyle: 'medium'}).format(data.createdAt)}
+        </span>
       </div>
     </div>
   );
